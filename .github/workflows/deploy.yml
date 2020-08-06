@@ -33,7 +33,7 @@ jobs:
         uses: appleboy/ssh-action@master
         # 定义执行该uses脚本需要的参数以及运行命令
         with:
-          host: ${{ secrets.SSH_USER_HOST }}
+          host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER_NAME }}
           password: ${{ secrets.SSH_USER_PWD }}
           port: ${{ secrets.SSH_PORT }}
