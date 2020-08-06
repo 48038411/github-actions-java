@@ -1,0 +1,43 @@
+name: deploy springboot
+on:
+  push:
+    branches:
+      - master
+job:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        run: |
+          # 打包项目
+          mvn -B package --file pom.xml
+          # 登录阿里云仓库地址
+          docker login --username=${{ secrets.ALIYUN_USERNAME }} --password ${{ secrets.ALIYUN_PASSWORD }} registry.cn-shanghai.aliyuncs.com
+          # 以github运行编号为名构建镜像
+          docker build . -t ${{ secrets.REGISTRY }}:$GITHUB_RUN_NUMBER
+          # 以github运行编号为名推送到仓库上
+          docker push ${{ secrets.REGISTRY }}:$GITHUB_RUN_NUMBER
+          # 标记本地镜像，归入阿里云的私有仓库
+          docker tag $(docker images ${{ secrets.REGISTRY }}:$GITHUB_RUN_NUMBER -q) ${{ secrets.REGISTRY }}:latest
+          # push一版最新的
+          docker push ${{ secrets.REGISTRY }}:latest
+          # 设置环境变量，这里是CI为true，脚本自动运行
+        env:
+          CI: true
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        # 定义执行该uses脚本需要的参数以及运行命令
+        with:
+          host: ${{ secrets.SSH_USER_HOST }}
+          username: ${{ secrets.SSH_USER_NAME }}
+          password: ${{ secrets.SSH_USER_PWD }}
+          port: 22
+          script: |
+            # 检索该仓库的docker容器，停止然后删除容器删除镜像，再下拉镜像再打包
+              docker stop $(docker ps --filter ancestor=${{ secrets.REGISTRY }} -q)
+              docker rm -f $(docker ps -a --filter ancestor=${{ secrets.REGISTRY }}:latest -q)
+              docker rmi -f $(docker images  ${{ secrets.REGISTRY }}:latest -q)
+              docker login --username=${{ secrets.ALIYUN_USERNAME }} --password ${{ secrets.ALIYUN_PASSWORD }} registry.cn-shanghai.aliyuncs.com
+              docker pull ${{ secrets.REGISTRY }}:latest
+              docker run -d -p 80:80 ${{ secrets.REGISTRY }}:latest
