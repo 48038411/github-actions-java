@@ -23,9 +23,12 @@ jobs:
           docker tag $(docker images ${{ secrets.REGISTRY }}:$GITHUB_RUN_NUMBER -q) ${{ secrets.REGISTRY }}:latest
           # push一版最新的
           docker push ${{ secrets.REGISTRY }}:latest
+          echo "牛逼"
           # 设置环境变量，这里是CI为true，脚本自动运行
         env:
           CI: true
+
+
       - name: Deploy
         uses: appleboy/ssh-action@master
         # 定义执行该uses脚本需要的参数以及运行命令
@@ -36,9 +39,9 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             # 检索该仓库的docker容器，停止然后删除容器删除镜像，再下拉镜像再打包
-              docker stop $(docker ps --filter ancestor=${{ secrets.REGISTRY }} -q)
-              docker rm -f $(docker ps -a --filter ancestor=${{ secrets.REGISTRY }}:latest -q)
-              docker rmi -f $(docker images  ${{ secrets.REGISTRY }}:latest -q)
-              docker login --username=${{ secrets.ALIYUN_USERNAME }} --password ${{ secrets.ALIYUN_PASSWORD }} registry.cn-shanghai.aliyuncs.com
-              docker pull ${{ secrets.REGISTRY }}:latest
-              docker run -d -p 80:80 ${{ secrets.REGISTRY }}:latest
+            docker stop $(docker ps --filter ancestor=${{ secrets.REGISTRY }} -q)
+            docker rm -f $(docker ps -a --filter ancestor=${{ secrets.REGISTRY }}:latest -q)
+            docker rmi -f $(docker images  ${{ secrets.REGISTRY }}:latest -q)
+            docker login --username=${{ secrets.ALIYUN_USERNAME }} --password ${{ secrets.ALIYUN_PASSWORD }} registry.cn-shanghai.aliyuncs.com
+            docker pull ${{ secrets.REGISTRY }}:latest
+            docker run -d -p 8082:8082 ${{ secrets.REGISTRY }}:latest
