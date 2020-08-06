@@ -18,3 +18,7 @@ jobs:
       run: |
         mvn -B package --file pom.xml
         pwd
+        cd /home/runner/work/github-actions-java/github-actions-java
+        ls
+        cd /home/runner/work/github-actions-java/github-actions-java/src/target
+        ls
